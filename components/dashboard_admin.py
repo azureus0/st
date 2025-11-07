@@ -3,10 +3,23 @@ import connection as cn
 from functions.text_encrypt_decrypt import super_decrypt_text
 from functions.file_encrypt_decrypt import decrypt_file_gcm
 from functions.steganography import decode_lsb
-from .submit_report import AES_KEY_TEXT, AES_KEY_FILE, VIGENERE_KEY
 import os
 import io
+import hashlib
+import base64
 
+# ===============================
+# Kunci enkripsi diambil dari Streamlit secrets
+# ===============================
+MASTER_KEY = st.secrets.get("MASTER_KEY", "CEPUIN_MASTER_SECRET").encode()
+
+AES_KEY_TEXT = base64.urlsafe_b64encode(hashlib.sha256(MASTER_KEY + b"text").digest())
+AES_KEY_FILE = hashlib.sha256(MASTER_KEY + b"file").digest()
+VIGENERE_KEY = "CEPUINVIGENEREKEY"
+
+# ===============================
+# Dashboard Admin
+# ===============================
 def dashboard_admin():
     # Pastikan tabel ada
     cn.init_db_reports()
