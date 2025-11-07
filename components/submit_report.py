@@ -14,7 +14,7 @@ from functions.steganography import encode_lsb
 # -----------------------------
 MASTER_KEY = b"CEPUIN_MASTER_SECRET"
 
-# Text AES (Fernet) - deterministik
+# Text AES (Fernet)
 AES_KEY_TEXT = base64.urlsafe_b64encode(hashlib.sha256(MASTER_KEY + b"text").digest())
 
 # File AES GCM (raw 32 bytes)
@@ -32,11 +32,11 @@ os.makedirs(UPLOAD_DIR_FILES, exist_ok=True)
 os.makedirs(UPLOAD_DIR_IMAGES, exist_ok=True)
 
 # -----------------------------
-# Fungsi submit
+# Fungsi submit laporan
 # -----------------------------
 def submit():
     st.header("Submit Report")
-    
+
     with st.form("report_form", clear_on_submit=True):
         subject = st.text_input("Subject (singkat)")
         anonymous = st.checkbox("Submit as anonymous", value=True)
@@ -46,7 +46,7 @@ def submit():
         with tabs[0]:
             description_biasa = st.text_area("Description (mode biasa)")
             files_biasa = st.file_uploader(
-                "Upload file (opsional, bisa banyak jenis)", 
+                "Upload file (opsional, bisa banyak jenis)",
                 type=None, accept_multiple_files=True, key="files_biasa"
             )
 
@@ -54,111 +54,104 @@ def submit():
             description_stego = st.text_area("Description (mode steganografi)")
             secret_message_stego = st.text_area("Pesan rahasia untuk disisipkan ke gambar")
             image_stego = st.file_uploader(
-                "Upload image untuk steganografi (wajib)", 
+                "Upload image untuk steganografi (wajib)",
                 type=["png"], key="image_stego"
             )
 
         submitted = st.form_submit_button("Submit")
 
-        if submitted:
-            if not subject:
-                st.error("Subject wajib diisi!")
-                return
+        if not submitted:
+            return
 
-            # Mode biasa
-            if description_biasa and not files_biasa:
-                st.error("File harus diupload untuk mode biasa!")
-                return
+        # Validasi input
+        if not subject:
+            st.error("Subject wajib diisi!")
+            return
 
-            # Mode stego
-            if description_stego and (not secret_message_stego or not image_stego):
-                st.error("Pesan rahasia dan gambar wajib diisi untuk steganografi!")
-                return
+        if not (description_biasa or description_stego):
+            st.error("Deskripsi harus diisi!")
+            return
 
-            # Minimal satu deskripsi wajib
-            if not (description_biasa or description_stego):
-                st.error("Deskripsi harus diisi!")
-                return
+        if description_stego and (not secret_message_stego or not image_stego):
+            st.error("Pesan rahasia dan gambar wajib diisi untuk steganografi!")
+            return
 
-            # Tentukan mode
-            if description_stego:
-                mode = "steganografi"
-                description = description_stego
-            else:
-                mode = "biasa"
-                description = description_biasa
+        # Tentukan mode
+        if description_stego:
+            mode = "steganografi"
+            description = description_stego
+        else:
+            mode = "biasa"
+            description = description_biasa
 
-            # Tentukan username
-            username_to_save = "Anonymous" if anonymous else st.session_state["username"]
+        # Tentukan username
+        username_to_save = "Anonymous" if anonymous else st.session_state["username"]
 
-            # -----------------------------
-            # Simpan file biasa + enkripsi AES GCM
-            # -----------------------------
-            file_paths = []
-            if mode == "biasa" and files_biasa:
-                for f in files_biasa:
-                    # Buat nama file unik dengan UUID
-                    unique_name = f"{uuid.uuid4().hex}_{f.name}"
-                    raw_file_path = os.path.join(UPLOAD_DIR_FILES, unique_name)
+        # -----------------------------
+        # Simpan file biasa + enkripsi AES GCM
+        # -----------------------------
+        file_paths = []
+        if mode == "biasa" and files_biasa:
+            for f in files_biasa:
+                unique_name = f"{uuid.uuid4().hex}_{f.name}"
+                raw_file_path = os.path.join(UPLOAD_DIR_FILES, unique_name)
 
-                    # Simpan sementara
-                    with open(raw_file_path, "wb") as temp_file:
-                        temp_file.write(f.getbuffer())
+                with open(raw_file_path, "wb") as temp_file:
+                    temp_file.write(f.getbuffer())
 
-                    # Enkripsi AES GCM
-                    encrypted_file_path = raw_file_path + ".enc"
-                    encrypt_file_gcm(
-                        input_filepath=raw_file_path,
-                        output_filepath=encrypted_file_path,
-                        key=AES_KEY_FILE
-                    )
-                    os.remove(raw_file_path)  # hapus file asli
-                    file_paths.append(encrypted_file_path)
-            else:
-                file_paths = None
+                encrypted_file_path = raw_file_path + ".enc"
+                encrypt_file_gcm(
+                    input_filepath=raw_file_path,
+                    output_filepath=encrypted_file_path,
+                    key=AES_KEY_FILE
+                )
+                os.remove(raw_file_path)
+                file_paths.append(encrypted_file_path)
 
-            # -----------------------------
-            # Simpan stego image
-            # -----------------------------
-            image_path = None
-            if mode == "steganografi" and image_stego:
-                unique_image_name = f"{uuid.uuid4().hex}_{image_stego.name}"
-                raw_image_path = os.path.join(UPLOAD_DIR_IMAGES, unique_image_name)
-                with open(raw_image_path, "wb") as out:
-                    out.write(image_stego.getbuffer())
+        if not file_paths:
+            file_paths = None
 
-                # Sisipkan secret message
-                stego_output_path = os.path.join(UPLOAD_DIR_IMAGES, "stego_" + unique_image_name)
-                encode_lsb(raw_image_path, secret_message_stego, stego_output_path)
-                image_path = stego_output_path
-                os.remove(raw_image_path)  # hapus gambar asli
+        # -----------------------------
+        # Simpan stego image
+        # -----------------------------
+        image_path = None
+        if mode == "steganografi" and image_stego:
+            unique_image_name = f"{uuid.uuid4().hex}_{image_stego.name}"
+            raw_image_path = os.path.join(UPLOAD_DIR_IMAGES, unique_image_name)
 
-            # -----------------------------
-            # Encrypt description text
-            # -----------------------------
-            if description:
-                encrypted_description = super_encrypt_text(description, VIGENERE_KEY, AES_KEY_TEXT)
-            else:
-                encrypted_description = None
+            with open(raw_image_path, "wb") as out:
+                out.write(image_stego.getbuffer())
 
-            # -----------------------------
-            # Simpan metadata ke DB
-            # -----------------------------
-            try:
-                query = """
-                    INSERT INTO reports (username, subject, description, mode, file_path, image_path)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                """
-                cn.run_query(query, params=(
-                    username_to_save,
-                    subject,
-                    encrypted_description,
-                    mode,
-                    ",".join(file_paths) if file_paths else None,
-                    image_path
-                ), fetch=False)
+            stego_output_path = os.path.join(UPLOAD_DIR_IMAGES, "stego_" + unique_image_name)
+            encode_lsb(raw_image_path, secret_message_stego, stego_output_path)
+            image_path = stego_output_path
+            os.remove(raw_image_path)
 
-                st.success("Report berhasil dikirim dan file/gambar disimpan")
-            except Exception as e:
-                st.error(f"Gagal menyimpan report: {e}")
+        # -----------------------------
+        # Enkripsi deskripsi
+        # -----------------------------
+        encrypted_description = (
+            super_encrypt_text(description, VIGENERE_KEY, AES_KEY_TEXT)
+            if description else None
+        )
 
+        # -----------------------------
+        # Simpan metadata ke DB (PostgreSQL)
+        # -----------------------------
+        try:
+            query = """
+                INSERT INTO reports (username, subject, description, mode, file_path, image_path)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """
+            cn.run_query(query, params=(
+                username_to_save,
+                subject,
+                encrypted_description,
+                mode,
+                ",".join(file_paths) if file_paths else None,
+                image_path
+            ), fetch=False)
+
+            st.success("✅ Report berhasil dikirim dan disimpan ke database!")
+        except Exception as e:
+            st.error(f"Gagal menyimpan report: {e}")

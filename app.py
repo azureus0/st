@@ -3,10 +3,19 @@ import connection as cn
 from components import dashboard, login_page, register_page
 
 # --------------------------
-# Inisialisasi database
+# PAGE CONFIG
 # --------------------------
-cn.init_db()          # Users
-cn.init_db_reports()  # Reports
+st.set_page_config(page_title="CEPUIN", layout="centered")
+
+# --------------------------
+# Inisialisasi Database Aman
+# --------------------------
+# Pastikan tabel terbentuk tanpa crash kalau database belum siap
+try:
+    cn.init_db()
+    cn.init_db_reports()
+except Exception as e:
+    st.warning(f"⚠️ Database belum bisa diinisialisasi: {e}")
 
 # --------------------------
 # SESSION STATE DEFAULT
@@ -21,12 +30,7 @@ if 'page' not in st.session_state:
     st.session_state['page'] = 'login'
 
 # --------------------------
-# PAGE CONFIG
-# --------------------------
-st.set_page_config(page_title="CEPUIN", layout="centered")
-
-# --------------------------
-# USER SUDAH LOGIN
+# LOGIKA HALAMAN
 # --------------------------
 if st.session_state['is_logged_in']:
     st.sidebar.title("Navigation")
@@ -52,9 +56,6 @@ if st.session_state['is_logged_in']:
         st.session_state['page'] = 'login'
         st.rerun()
 
-# --------------------------
-# BELUM LOGIN
-# --------------------------
 else:
     st.sidebar.title("Navigation")
     st.sidebar.warning("Not logged in")
