@@ -12,7 +12,8 @@ from functions.steganography import encode_lsb
 # -----------------------------
 # MASTER KEY & AES KEYS
 # -----------------------------
-MASTER_KEY = b"CEPUIN_MASTER_SECRET"
+# Ambil MASTER_KEY dari Streamlit Secrets, fallback ke default bila lokal
+MASTER_KEY = st.secrets.get("MASTER_KEY", "CEPUIN_MASTER_SECRET").encode()
 
 # Text AES (Fernet)
 AES_KEY_TEXT = base64.urlsafe_b64encode(hashlib.sha256(MASTER_KEY + b"text").digest())
@@ -20,7 +21,7 @@ AES_KEY_TEXT = base64.urlsafe_b64encode(hashlib.sha256(MASTER_KEY + b"text").dig
 # File AES GCM (raw 32 bytes)
 AES_KEY_FILE = hashlib.sha256(MASTER_KEY + b"file").digest()
 
-# Vigenere Key
+# Vigenere Key (boleh tetap hardcode, bukan rahasia besar)
 VIGENERE_KEY = "CEPUINVIGENEREKEY"
 
 # -----------------------------
@@ -63,7 +64,9 @@ def submit():
         if not submitted:
             return
 
+        # -----------------------------
         # Validasi input
+        # -----------------------------
         if not subject:
             st.error("Subject wajib diisi!")
             return
@@ -76,7 +79,9 @@ def submit():
             st.error("Pesan rahasia dan gambar wajib diisi untuk steganografi!")
             return
 
-        # Tentukan mode
+        # -----------------------------
+        # Tentukan mode & username
+        # -----------------------------
         if description_stego:
             mode = "steganografi"
             description = description_stego
@@ -84,8 +89,7 @@ def submit():
             mode = "biasa"
             description = description_biasa
 
-        # Tentukan username
-        username_to_save = "Anonymous" if anonymous else st.session_state["username"]
+        username_to_save = "Anonymous" if anonymous else st.session_state.get("username", "Guest")
 
         # -----------------------------
         # Simpan file biasa + enkripsi AES GCM
