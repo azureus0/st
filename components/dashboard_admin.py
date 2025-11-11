@@ -44,7 +44,7 @@ def dashboard_admin():
             timestamp_wib = timestamp_obj.astimezone(wib)
             formatted_time = timestamp_wib.strftime("%d %B %Y, %H:%M")
 
-            st.markdown(f"# Report #{report['id']}")
+            st.markdown(f"# Report #{report['id']} - {report['subject']}")
             st.caption(f"Pengirim: {report['username']} | {formatted_time}")
             st.caption(f"Mode: `{report['mode']}`")
 
