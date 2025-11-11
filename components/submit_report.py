@@ -39,23 +39,23 @@ def submit():
     st.header("Submit Report")
 
     with st.form("report_form", clear_on_submit=True):
-        subject = st.text_input("Subject (singkat)")
+        subject = st.text_input("Subjek Laporan (singkat)")
         anonymous = st.checkbox("Submit as anonymous", value=True)
 
         tabs = st.tabs(["Biasa", "Steganografi"])
 
         with tabs[0]:
-            description_biasa = st.text_area("Description (mode biasa)")
+            description_biasa = st.text_area("Deskripsi (mode biasa)")
             files_biasa = st.file_uploader(
-                "Upload file (opsional, bisa banyak jenis)",
-                type=None, accept_multiple_files=True, key="files_biasa"
+                "Upload File Bukti (opsional)",
+                type=["pdf", "txt", "png", "jpg", "jpeg", "xlsx", "zip"], accept_multiple_files=True, key="files_biasa"
             )
 
         with tabs[1]:
-            description_stego = st.text_area("Description (mode steganografi)")
+            description_stego = st.text_area("Deskripsi (mode steganografi)")
             secret_message_stego = st.text_area("Pesan rahasia untuk disisipkan ke gambar")
             image_stego = st.file_uploader(
-                "Upload image untuk steganografi (wajib)",
+                "Upload Gambar untuk Steganografi (wajib)",
                 type=["png"], key="image_stego"
             )
 
@@ -156,6 +156,6 @@ def submit():
                 image_path
             ), fetch=False)
 
-            st.success("Report berhasil dikirim dan disimpan ke database!")
+            st.success("Report berhasil dikirim!")
         except Exception as e:
             st.error(f"Gagal menyimpan report: {e}")
