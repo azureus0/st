@@ -156,6 +156,6 @@ def submit():
                 image_path
             ), fetch=False)
 
-            st.success("✅ Report berhasil dikirim dan disimpan ke database!")
+            st.success("Report berhasil dikirim dan disimpan ke database!")
         except Exception as e:
             st.error(f"Gagal menyimpan report: {e}")

@@ -15,7 +15,7 @@ try:
     cn.init_db()
     cn.init_db_reports()
 except Exception as e:
-    st.warning(f"⚠️ Database belum bisa diinisialisasi: {e}")
+    st.warning(f"Database belum bisa diinisialisasi: {e}")
 
 # --------------------------
 # SESSION STATE DEFAULT
