@@ -44,12 +44,12 @@ def dashboard_admin():
             timestamp_wib = timestamp_obj.astimezone(wib)
             formatted_time = timestamp_wib.strftime("%d %B %Y, %H:%M")
 
-            st.markdown(f"### Report #{report['id']} - {report['subject']}")
+            st.markdown(f"# Report #{report['id']}")
             st.caption(f"Pengirim: {report['username']} | {formatted_time}")
             st.caption(f"Mode: `{report['mode']}`")
 
             if report["description"]:
-                st.markdown("#### Encrypted Description")
+                st.write("#### Encrypted Description:")
                 st.code(report["description"])
                 
                 decrypt_clicked = st.button(
@@ -74,11 +74,11 @@ def dashboard_admin():
                 file_list = [
                     f.strip() for f in report["file_path"].split(",") if f.strip()
                 ]
-                st.write("Attached Encrypted Files:")
+                st.write("#### Attached Encrypted Files:")
                 for fpath in file_list:
                     st.code(fpath)
 
-                if st.button(f"Decrypt File(s)", key=f"file_{report['id']}"):
+                if st.button(f"Decrypt Files", key=f"file_{report['id']}"):
                     for fpath in file_list:
                         if not os.path.exists(fpath):
                             st.warning(f"File tidak ditemukan: {fpath}")
@@ -101,7 +101,7 @@ def dashboard_admin():
                             st.error(f"Error decrypting {fpath}: {e}")
 
             if report["mode"] == "steganografi" and report["image_path"]:
-                st.write("Steganography Image:")
+                st.write("#### Steganography Image:")
                 if os.path.exists(report["image_path"]):
                     st.image(
                         report["image_path"],
